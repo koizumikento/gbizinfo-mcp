@@ -1,0 +1,40 @@
+[build-system]
+requires = ["hatchling>=1.25.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "gbizinfo-mcp"
+version = "0.1.0"
+description = "MCP server for gBizINFO REST API v2"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+  "httpx>=0.28.1",
+  "mcp[cli]>=1.13.0",
+  "pydantic>=2.11.0",
+]
+
+[project.scripts]
+gbizinfo-mcp = "gbizinfo_mcp.__main__:main"
+
+[dependency-groups]
+dev = [
+  "pytest>=8.4.1",
+  "pytest-asyncio>=1.1.0",
+  "respx>=0.22.0",
+  "ruff>=0.12.10",
+  "ty>=0.0.1a16",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/gbizinfo_mcp"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
