@@ -33,6 +33,13 @@ temp/
 ### TypeScript
 *.tsbuildinfo
 
+### Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyc
+*.pyo
+
 ### Environment files
 .env
 .env.local
