@@ -52,7 +52,7 @@ Claude Desktop / Codex style:
       "command": "uvx",
       "args": [
         "--from",
-        "gbizinfo-mcp @ git+https://github.com/<OWNER>/gbizinfo-mcp.git@<TAG_OR_SHA>",
+        "git+https://github.com/koizumikento/jma-data-mcp.git",
         "gbizinfo-mcp"
       ],
       "env": {
