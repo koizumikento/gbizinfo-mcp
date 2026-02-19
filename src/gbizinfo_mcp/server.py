@@ -1,8 +1,10 @@
 from __future__ import annotations
 
-from typing import Any
+from typing import Annotated, Any
 
 from mcp.server.fastmcp import FastMCP
+from mcp.types import ToolAnnotations
+from pydantic import Field
 
 from .client import ApiRequestError, GbizInfoClient
 from .config import Settings, load_settings_from_env
@@ -13,7 +15,39 @@ from .validators import (
     ensure_metadata_flag,
     ensure_page,
     ensure_yyyymmdd,
+    normalize_prefecture,
 )
+
+READ_ONLY_TOOL = ToolAnnotations(
+    readOnlyHint=True,
+    idempotentHint=True,
+    openWorldHint=True,
+)
+
+CorporateNumberParam = Annotated[
+    str,
+    Field(description="13-digit corporate number."),
+]
+MetadataFlagParam = Annotated[
+    bool | None,
+    Field(description="Set true to include metadata in the response."),
+]
+FromDateParam = Annotated[
+    str,
+    Field(description="Start date in yyyyMMdd format."),
+]
+ToDateParam = Annotated[
+    str,
+    Field(description="End date in yyyyMMdd format."),
+]
+PageParam = Annotated[
+    int | None,
+    Field(description="Page number (>= 1)."),
+]
+LimitParam = Annotated[
+    int | None,
+    Field(description="Maximum records per page (0-5000)."),
+]
 
 
 def _to_query(params: dict[str, Any]) -> dict[str, str]:
@@ -84,6 +118,7 @@ class GbizInfoToolset:
         ensure_page(page)
         ensure_limit(limit)
         ensure_metadata_flag(metadata_flg)
+        prefecture = normalize_prefecture(prefecture)
 
         query = _to_query(
             {
@@ -413,14 +448,43 @@ def create_server(settings: Settings | None = None) -> FastMCP:
     mcp = FastMCP("gbizinfo-mcp")
     toolset = GbizInfoToolset(client=GbizInfoClient(resolved_settings))
 
-    @mcp.tool()
+    @mcp.tool(
+        description=(
+            "Search corporations in gBizINFO. Use filters such as name, corporate number, "
+            "prefecture, and industry-related attributes."
+        ),
+        annotations=READ_ONLY_TOOL,
+    )
     async def hojin_search(
-        corporate_number: str | None = None,
-        name: str | None = None,
-        exist_flg: str | None = None,
-        corporate_type: str | None = None,
-        prefecture: str | None = None,
-        city: str | None = None,
+        corporate_number: Annotated[
+            str | None,
+            Field(description="13-digit corporate number for exact match."),
+        ] = None,
+        name: Annotated[
+            str | None,
+            Field(description="Corporate name for partial match."),
+        ] = None,
+        exist_flg: Annotated[
+            str | None,
+            Field(description="Set 'true' or 'false' to filter activity info."),
+        ] = None,
+        corporate_type: Annotated[
+            str | None,
+            Field(description="Corporate type code(s). Use comma-separated codes."),
+        ] = None,
+        prefecture: Annotated[
+            str | None,
+            Field(
+                description=(
+                    "Prefecture filter. Accepts 1-2 digit code or Japanese name, "
+                    "for example '13', '東京都', or '東京'."
+                )
+            ),
+        ] = None,
+        city: Annotated[
+            str | None,
+            Field(description="Municipality code (3rd-5th digits of local government code)."),
+        ] = None,
         capital_stock_from: str | None = None,
         capital_stock_to: str | None = None,
         employee_number_from: str | None = None,
@@ -444,9 +508,9 @@ def create_server(settings: Settings | None = None) -> FastMCP:
         certification: str | None = None,
         ministry: str | None = None,
         source: str | None = None,
-        page: int | None = None,
-        limit: int | None = None,
-        metadata_flg: bool | None = None,
+        page: PageParam = None,
+        limit: LimitParam = None,
+        metadata_flg: MetadataFlagParam = None,
     ) -> dict[str, Any]:
         return await toolset.hojin_search(
             corporate_number=corporate_number,
@@ -493,12 +557,15 @@ def create_server(settings: Settings | None = None) -> FastMCP:
             metadata_flg=metadata_flg,
         )
 
-    @mcp.tool()
+    @mcp.tool(
+        description="List updates to basic corporate info for the specified date range.",
+        annotations=READ_ONLY_TOOL,
+    )
     async def hojin_update_info_basic(
-        from_date: str,
-        to_date: str,
-        page: int | None = None,
-        metadata_flg: bool | None = None,
+        from_date: FromDateParam,
+        to_date: ToDateParam,
+        page: PageParam = None,
+        metadata_flg: MetadataFlagParam = None,
     ) -> dict[str, Any]:
         return await toolset.hojin_update_info_basic(
             from_date=from_date,
@@ -507,12 +574,15 @@ def create_server(settings: Settings | None = None) -> FastMCP:
             metadata_flg=metadata_flg,
         )
 
-    @mcp.tool()
+    @mcp.tool(
+        description="List updates to corporate certification info for the specified date range.",
+        annotations=READ_ONLY_TOOL,
+    )
     async def hojin_update_info_certification(
-        from_date: str,
-        to_date: str,
-        page: int | None = None,
-        metadata_flg: bool | None = None,
+        from_date: FromDateParam,
+        to_date: ToDateParam,
+        page: PageParam = None,
+        metadata_flg: MetadataFlagParam = None,
     ) -> dict[str, Any]:
         return await toolset.hojin_update_info_certification(
             from_date=from_date,
@@ -521,12 +591,15 @@ def create_server(settings: Settings | None = None) -> FastMCP:
             metadata_flg=metadata_flg,
         )
 
-    @mcp.tool()
+    @mcp.tool(
+        description="List updates to commendation info for the specified date range.",
+        annotations=READ_ONLY_TOOL,
+    )
     async def hojin_update_info_commendation(
-        from_date: str,
-        to_date: str,
-        page: int | None = None,
-        metadata_flg: bool | None = None,
+        from_date: FromDateParam,
+        to_date: ToDateParam,
+        page: PageParam = None,
+        metadata_flg: MetadataFlagParam = None,
     ) -> dict[str, Any]:
         return await toolset.hojin_update_info_commendation(
             from_date=from_date,
@@ -535,12 +608,15 @@ def create_server(settings: Settings | None = None) -> FastMCP:
             metadata_flg=metadata_flg,
         )
 
-    @mcp.tool()
+    @mcp.tool(
+        description="List updates to corporation registry info for the specified date range.",
+        annotations=READ_ONLY_TOOL,
+    )
     async def hojin_update_info_corporation(
-        from_date: str,
-        to_date: str,
-        page: int | None = None,
-        metadata_flg: bool | None = None,
+        from_date: FromDateParam,
+        to_date: ToDateParam,
+        page: PageParam = None,
+        metadata_flg: MetadataFlagParam = None,
     ) -> dict[str, Any]:
         return await toolset.hojin_update_info_corporation(
             from_date=from_date,
@@ -549,12 +625,15 @@ def create_server(settings: Settings | None = None) -> FastMCP:
             metadata_flg=metadata_flg,
         )
 
-    @mcp.tool()
+    @mcp.tool(
+        description="List updates to financial info for the specified date range.",
+        annotations=READ_ONLY_TOOL,
+    )
     async def hojin_update_info_finance(
-        from_date: str,
-        to_date: str,
-        page: int | None = None,
-        metadata_flg: bool | None = None,
+        from_date: FromDateParam,
+        to_date: ToDateParam,
+        page: PageParam = None,
+        metadata_flg: MetadataFlagParam = None,
     ) -> dict[str, Any]:
         return await toolset.hojin_update_info_finance(
             from_date=from_date,
@@ -563,12 +642,15 @@ def create_server(settings: Settings | None = None) -> FastMCP:
             metadata_flg=metadata_flg,
         )
 
-    @mcp.tool()
+    @mcp.tool(
+        description="List updates to patent info for the specified date range.",
+        annotations=READ_ONLY_TOOL,
+    )
     async def hojin_update_info_patent(
-        from_date: str,
-        to_date: str,
-        page: int | None = None,
-        metadata_flg: bool | None = None,
+        from_date: FromDateParam,
+        to_date: ToDateParam,
+        page: PageParam = None,
+        metadata_flg: MetadataFlagParam = None,
     ) -> dict[str, Any]:
         return await toolset.hojin_update_info_patent(
             from_date=from_date,
@@ -577,12 +659,15 @@ def create_server(settings: Settings | None = None) -> FastMCP:
             metadata_flg=metadata_flg,
         )
 
-    @mcp.tool()
+    @mcp.tool(
+        description="List updates to procurement info for the specified date range.",
+        annotations=READ_ONLY_TOOL,
+    )
     async def hojin_update_info_procurement(
-        from_date: str,
-        to_date: str,
-        page: int | None = None,
-        metadata_flg: bool | None = None,
+        from_date: FromDateParam,
+        to_date: ToDateParam,
+        page: PageParam = None,
+        metadata_flg: MetadataFlagParam = None,
     ) -> dict[str, Any]:
         return await toolset.hojin_update_info_procurement(
             from_date=from_date,
@@ -591,12 +676,15 @@ def create_server(settings: Settings | None = None) -> FastMCP:
             metadata_flg=metadata_flg,
         )
 
-    @mcp.tool()
+    @mcp.tool(
+        description="List updates to subsidy info for the specified date range.",
+        annotations=READ_ONLY_TOOL,
+    )
     async def hojin_update_info_subsidy(
-        from_date: str,
-        to_date: str,
-        page: int | None = None,
-        metadata_flg: bool | None = None,
+        from_date: FromDateParam,
+        to_date: ToDateParam,
+        page: PageParam = None,
+        metadata_flg: MetadataFlagParam = None,
     ) -> dict[str, Any]:
         return await toolset.hojin_update_info_subsidy(
             from_date=from_date,
@@ -605,12 +693,15 @@ def create_server(settings: Settings | None = None) -> FastMCP:
             metadata_flg=metadata_flg,
         )
 
-    @mcp.tool()
+    @mcp.tool(
+        description="List updates to workplace info for the specified date range.",
+        annotations=READ_ONLY_TOOL,
+    )
     async def hojin_update_info_workplace(
-        from_date: str,
-        to_date: str,
-        page: int | None = None,
-        metadata_flg: bool | None = None,
+        from_date: FromDateParam,
+        to_date: ToDateParam,
+        page: PageParam = None,
+        metadata_flg: MetadataFlagParam = None,
     ) -> dict[str, Any]:
         return await toolset.hojin_update_info_workplace(
             from_date=from_date,
@@ -619,90 +710,117 @@ def create_server(settings: Settings | None = None) -> FastMCP:
             metadata_flg=metadata_flg,
         )
 
-    @mcp.tool()
+    @mcp.tool(
+        description="Get basic corporate information by corporate number.",
+        annotations=READ_ONLY_TOOL,
+    )
     async def hojin_get_basic(
-        corporate_number: str,
-        metadata_flg: bool | None = None,
+        corporate_number: CorporateNumberParam,
+        metadata_flg: MetadataFlagParam = None,
     ) -> dict[str, Any]:
         return await toolset.hojin_get_basic(
             corporate_number=corporate_number,
             metadata_flg=metadata_flg,
         )
 
-    @mcp.tool()
+    @mcp.tool(
+        description="Get corporate certification information by corporate number.",
+        annotations=READ_ONLY_TOOL,
+    )
     async def hojin_get_certification(
-        corporate_number: str,
-        metadata_flg: bool | None = None,
+        corporate_number: CorporateNumberParam,
+        metadata_flg: MetadataFlagParam = None,
     ) -> dict[str, Any]:
         return await toolset.hojin_get_certification(
             corporate_number=corporate_number,
             metadata_flg=metadata_flg,
         )
 
-    @mcp.tool()
+    @mcp.tool(
+        description="Get corporate commendation information by corporate number.",
+        annotations=READ_ONLY_TOOL,
+    )
     async def hojin_get_commendation(
-        corporate_number: str,
-        metadata_flg: bool | None = None,
+        corporate_number: CorporateNumberParam,
+        metadata_flg: MetadataFlagParam = None,
     ) -> dict[str, Any]:
         return await toolset.hojin_get_commendation(
             corporate_number=corporate_number,
             metadata_flg=metadata_flg,
         )
 
-    @mcp.tool()
+    @mcp.tool(
+        description="Get corporation registry information by corporate number.",
+        annotations=READ_ONLY_TOOL,
+    )
     async def hojin_get_corporation(
-        corporate_number: str,
-        metadata_flg: bool | None = None,
+        corporate_number: CorporateNumberParam,
+        metadata_flg: MetadataFlagParam = None,
     ) -> dict[str, Any]:
         return await toolset.hojin_get_corporation(
             corporate_number=corporate_number,
             metadata_flg=metadata_flg,
         )
 
-    @mcp.tool()
+    @mcp.tool(
+        description="Get financial information by corporate number.",
+        annotations=READ_ONLY_TOOL,
+    )
     async def hojin_get_finance(
-        corporate_number: str,
-        metadata_flg: bool | None = None,
+        corporate_number: CorporateNumberParam,
+        metadata_flg: MetadataFlagParam = None,
     ) -> dict[str, Any]:
         return await toolset.hojin_get_finance(
             corporate_number=corporate_number,
             metadata_flg=metadata_flg,
         )
 
-    @mcp.tool()
+    @mcp.tool(
+        description="Get patent information by corporate number.",
+        annotations=READ_ONLY_TOOL,
+    )
     async def hojin_get_patent(
-        corporate_number: str,
-        metadata_flg: bool | None = None,
+        corporate_number: CorporateNumberParam,
+        metadata_flg: MetadataFlagParam = None,
     ) -> dict[str, Any]:
         return await toolset.hojin_get_patent(
             corporate_number=corporate_number,
             metadata_flg=metadata_flg,
         )
 
-    @mcp.tool()
+    @mcp.tool(
+        description="Get procurement information by corporate number.",
+        annotations=READ_ONLY_TOOL,
+    )
     async def hojin_get_procurement(
-        corporate_number: str,
-        metadata_flg: bool | None = None,
+        corporate_number: CorporateNumberParam,
+        metadata_flg: MetadataFlagParam = None,
     ) -> dict[str, Any]:
         return await toolset.hojin_get_procurement(
             corporate_number=corporate_number,
             metadata_flg=metadata_flg,
         )
 
-    @mcp.tool()
+    @mcp.tool(
+        description="Get subsidy information by corporate number.",
+        annotations=READ_ONLY_TOOL,
+    )
     async def hojin_get_subsidy(
-        corporate_number: str,
-        metadata_flg: bool | None = None,
+        corporate_number: CorporateNumberParam,
+        metadata_flg: MetadataFlagParam = None,
     ) -> dict[str, Any]:
         return await toolset.hojin_get_subsidy(
             corporate_number=corporate_number,
             metadata_flg=metadata_flg,
         )
 
-    @mcp.tool()
+    @mcp.tool(
+        description="Get workplace information by corporate number.",
+        annotations=READ_ONLY_TOOL,
+    )
     async def hojin_get_workplace(
-        corporate_number: str,
-        metadata_flg: bool | None = None,
+        corporate_number: CorporateNumberParam,
+        metadata_flg: MetadataFlagParam = None,
     ) -> dict[str, Any]:
         return await toolset.hojin_get_workplace(
             corporate_number=corporate_number,

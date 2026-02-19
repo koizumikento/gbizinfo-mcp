@@ -9,6 +9,7 @@ from gbizinfo_mcp.validators import (
     ensure_metadata_flag,
     ensure_page,
     ensure_yyyymmdd,
+    normalize_prefecture,
 )
 
 
@@ -45,3 +46,16 @@ def test_metadata_flag_validation() -> None:
     assert ensure_metadata_flag(None) is None
     with pytest.raises(ValueError, match="boolean"):
         ensure_metadata_flag("true")  # type: ignore[arg-type]
+
+
+def test_prefecture_normalization() -> None:
+    assert normalize_prefecture(None) is None
+    assert normalize_prefecture("13") == "13"
+    assert normalize_prefecture("1") == "01"
+    assert normalize_prefecture("０１") == "01"
+    assert normalize_prefecture("東京都") == "13"
+    assert normalize_prefecture("東京") == "13"
+    assert normalize_prefecture("東京都,神奈川県") == "13,14"
+
+    with pytest.raises(ValueError, match="1-2 digit code"):
+        normalize_prefecture("Tokyo")

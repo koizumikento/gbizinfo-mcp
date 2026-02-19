@@ -85,6 +85,26 @@ async def test_toolset_wraps_api_errors_as_value_errors() -> None:
         await toolset.hojin_get_basic(corporate_number="1234567890123")
 
 
+@pytest.mark.asyncio
+async def test_hojin_search_normalizes_prefecture_name_to_code() -> None:
+    client = FakeClient()
+    toolset = GbizInfoToolset(client=client)  # type: ignore[arg-type]
+
+    result = await toolset.hojin_search(name="Test Corporation", prefecture="東京都")
+
+    assert result["query"]["prefecture"] == "13"
+
+
+@pytest.mark.asyncio
+async def test_hojin_search_rejects_invalid_prefecture() -> None:
+    client = FakeClient()
+    toolset = GbizInfoToolset(client=client)  # type: ignore[arg-type]
+
+    with pytest.raises(ValueError, match="prefecture must be a 1-2 digit code"):
+        await toolset.hojin_search(name="Test Corporation", prefecture="Tokyo")
+    assert client.calls == []
+
+
 def test_create_server_requires_token_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("GBIZINFO_API_TOKEN", raising=False)
     with pytest.raises(ValueError, match="GBIZINFO_API_TOKEN is required"):
@@ -103,3 +123,35 @@ async def test_create_server_registers_19_tools() -> None:
     server = create_server(settings=settings)
     tools = await server.list_tools()
     assert len(tools) == 19
+
+
+@pytest.mark.asyncio
+async def test_create_server_exposes_tool_descriptions_and_readonly_annotations() -> None:
+    settings = Settings(api_token="token", base_url="https://example.com/hojin", timeout_seconds=20)
+    server = create_server(settings=settings)
+    tools = await server.list_tools()
+
+    assert all(tool.description for tool in tools)
+    assert all(tool.annotations is not None for tool in tools)
+    assert all(
+        tool.annotations.readOnlyHint is True
+        for tool in tools
+        if tool.annotations is not None
+    )
+
+
+@pytest.mark.asyncio
+async def test_create_server_exposes_key_parameter_descriptions() -> None:
+    settings = Settings(api_token="token", base_url="https://example.com/hojin", timeout_seconds=20)
+    server = create_server(settings=settings)
+    tools = await server.list_tools()
+
+    search = next(tool for tool in tools if tool.name == "hojin_search")
+    search_props = search.inputSchema["properties"]
+    assert search_props["prefecture"]["description"]
+    assert search_props["city"]["description"]
+    assert search_props["metadata_flg"]["description"]
+
+    get_basic = next(tool for tool in tools if tool.name == "hojin_get_basic")
+    get_props = get_basic.inputSchema["properties"]
+    assert get_props["corporate_number"]["description"]
