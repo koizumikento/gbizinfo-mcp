@@ -45,7 +45,7 @@ def test_metadata_flag_validation() -> None:
     assert ensure_metadata_flag(False) is False
     assert ensure_metadata_flag(None) is None
     with pytest.raises(ValueError, match="boolean"):
-        ensure_metadata_flag("true")  # type: ignore[arg-type]
+        ensure_metadata_flag("true")  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
 
 def test_prefecture_normalization() -> None:
