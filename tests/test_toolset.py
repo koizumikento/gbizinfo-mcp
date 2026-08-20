@@ -134,7 +134,7 @@ async def test_create_server_exposes_tool_descriptions_and_readonly_annotations(
     assert all(tool.description for tool in tools)
     assert all(tool.annotations is not None for tool in tools)
     assert all(
-        tool.annotations.readOnlyHint is True
+        tool.annotations.read_only_hint is True
         for tool in tools
         if tool.annotations is not None
     )
@@ -147,11 +147,11 @@ async def test_create_server_exposes_key_parameter_descriptions() -> None:
     tools = await server.list_tools()
 
     search = next(tool for tool in tools if tool.name == "hojin_search")
-    search_props = search.inputSchema["properties"]
+    search_props = search.input_schema["properties"]
     assert search_props["prefecture"]["description"]
     assert search_props["city"]["description"]
     assert search_props["metadata_flg"]["description"]
 
     get_basic = next(tool for tool in tools if tool.name == "hojin_get_basic")
-    get_props = get_basic.inputSchema["properties"]
+    get_props = get_basic.input_schema["properties"]
     assert get_props["corporate_number"]["description"]

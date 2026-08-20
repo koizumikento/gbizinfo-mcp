@@ -4,13 +4,13 @@ build-backend = "hatchling.build"
 
 [project]
 name = "gbizinfo-mcp"
-version = "0.1.0"
+version = "0.8.0"
 description = "MCP server for gBizINFO REST API v2"
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
   "httpx>=0.28.1",
-  "mcp[cli]>=1.13.0",
+  "mcp[cli]>=2.0.0,<3",
   "pydantic>=2.11.0",
 ]
 

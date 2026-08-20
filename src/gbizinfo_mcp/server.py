@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Annotated, Any
 
-from mcp.server.fastmcp import FastMCP
+from mcp.server import MCPServer
 from mcp.types import ToolAnnotations
 from pydantic import Field
 
@@ -19,9 +19,9 @@ from .validators import (
 )
 
 READ_ONLY_TOOL = ToolAnnotations(
-    readOnlyHint=True,
-    idempotentHint=True,
-    openWorldHint=True,
+    read_only_hint=True,
+    idempotent_hint=True,
+    open_world_hint=True,
 )
 
 CorporateNumberParam = Annotated[
@@ -443,9 +443,9 @@ class GbizInfoToolset:
         )
 
 
-def create_server(settings: Settings | None = None) -> FastMCP:
+def create_server(settings: Settings | None = None) -> MCPServer:
     resolved_settings = settings or load_settings_from_env()
-    mcp = FastMCP("gbizinfo-mcp")
+    mcp = MCPServer("gbizinfo-mcp")
     toolset = GbizInfoToolset(client=GbizInfoClient(resolved_settings))
 
     @mcp.tool(
