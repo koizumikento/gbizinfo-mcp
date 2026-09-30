@@ -1,8 +1,14 @@
 from __future__ import annotations
 
+import json
+import sys
 from typing import Any
 
+import httpx
 import pytest
+import respx
+from mcp import Client, StdioServerParameters
+from mcp.types import TextContent
 
 from gbizinfo_mcp.client import ApiRequestError
 from gbizinfo_mcp.config import Settings
@@ -153,3 +159,29 @@ async def test_create_server_exposes_key_parameter_descriptions() -> None:
     get_basic = next(tool for tool in tools if tool.name == "hojin_get_basic")
     get_props = get_basic.input_schema["properties"]
     assert get_props["corporate_number"]["description"]
+
+
+@pytest.mark.asyncio
+@respx.mock
+async def test_mcp_initialization_validation_and_response() -> None:
+    params = StdioServerParameters(
+        command=sys.executable,
+        args=["-m", "gbizinfo_mcp"],
+        env={"GBIZINFO_API_TOKEN": "test", "GBIZINFO_BASE_URL": "https://example.com/hojin"},
+    )
+    async with Client(params, mode="legacy", read_timeout_seconds=10) as client:
+        tools = await client.list_tools()
+        assert {tool.name for tool in tools.tools} == {spec.name for spec in TOOL_SPECS}
+        invalid = await client.call_tool("hojin_get_basic", {"corporate_number": "invalid"})
+        assert invalid.is_error
+
+    settings = Settings(api_token="test", base_url="https://example.com/hojin")
+    route = respx.get("https://example.com/hojin/v2/hojin/1234567890123").mock(
+        return_value=httpx.Response(200, json={"hojin-infos": [{"name": "Test Corporation"}]})
+    )
+    async with Client(create_server(settings)) as client:
+        result = await client.call_tool("hojin_get_basic", {"corporate_number": "1234567890123"})
+        assert not result.is_error
+        assert isinstance(result.content[0], TextContent)
+        assert json.loads(result.content[0].text) == {"hojin-infos": [{"name": "Test Corporation"}]}
+    assert route.call_count == 1
