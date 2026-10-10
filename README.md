@@ -45,6 +45,9 @@ MCPクライアント設定例:
 
 ## 開発
 
+SitesのWorkerで実行する場合は [Sites用adapterと配備手順](docs/sites.md) を参照してください。
+既存のPython library・CLI・stdioはそのまま利用できます。
+
 ```bash
 uv sync --frozen
 uv run ruff check .

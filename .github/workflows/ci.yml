@@ -30,3 +30,16 @@ jobs:
 
           assert len(asyncio.run(create_server().list_tools())) == 19
           PY
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: sites/package-lock.json
+      - run: npm ci
+        working-directory: sites
+      - run: npm run build
+        working-directory: sites
+      - run: npm run contract:check
+        working-directory: sites
+      - run: npm test
+        working-directory: sites
