@@ -72,4 +72,4 @@ storybook-static/
 ### Archives
 *.tgz
 
-
+sites/.runtime-test-*/
