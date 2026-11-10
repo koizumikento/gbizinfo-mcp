@@ -2,16 +2,28 @@
 
 Gビズインフォ REST API v2の現行18エンドポイントを、MCP・CLI・Pythonから利用できます。MCPはstdioで動作し、APIのJSONレスポンスをそのまま返します。
 
-## 実行
+[MCP登録](#mcpクライアントに登録する) · [CLI](#cliで使う) · [Pythonライブラリ](#pythonライブラリとして使う)
 
-Python 3.11+、[`uv`](https://docs.astral.sh/uv/)、GビズインフォのAPIトークンが必要です。
+## MCPクライアントに登録する
 
-```bash
-GBIZINFO_API_TOKEN=your_token \
-uvx --from git+https://github.com/koizumikento/gbizinfo-mcp.git@master gbizinfo-mcp
+Python 3.11以上、[uv](https://docs.astral.sh/uv/) と Git、Gビズインフォで発行したAPIトークンが必要です。 設定例の `your_token` は手元で差し替えてください。
+
+### Codex
+
+```sh
+codex mcp add gbizinfo --env "GBIZINFO_API_TOKEN=your_token" -- uvx --python 3.12 --from git+https://github.com/koizumikento/gbizinfo-mcp.git@master gbizinfo-mcp
+codex mcp list
 ```
 
-MCPクライアント設定例:
+新しいセッションの `/mcp` で接続を確認します。デスクトップ版では設定の「MCP servers」でSTDIOを選び、下のJSONと同じコマンド・引数を入力して保存し、再起動します。 環境変数も設定してください。 [OpenAI公式のMCP設定](https://learn.chatgpt.com/docs/extend/mcp)
+
+### Claude Desktop / Cursor
+
+- Claude Desktop（Windows） `%APPDATA%/Claude/claude_desktop_config.json`
+- Claude Desktop（macOS） `~/Library/Application Support/Claude/claude_desktop_config.json`
+- Cursor `.cursor/mcp.json`（プロジェクト内）
+
+既存の `mcpServers` に項目を追加し、保存後にクライアントを再起動します。`uvx` が見つからない場合は `command` に実行ファイルの絶対パスを指定してください。
 
 ```json
 {
@@ -19,6 +31,8 @@ MCPクライアント設定例:
     "gbizinfo": {
       "command": "uvx",
       "args": [
+        "--python",
+        "3.12",
         "--from",
         "git+https://github.com/koizumikento/gbizinfo-mcp.git@master",
         "gbizinfo-mcp"
@@ -31,17 +45,35 @@ MCPクライアント設定例:
 }
 ```
 
-任意設定は `GBIZINFO_BASE_URL`（既定: `https://api.info.gbiz.go.jp/hojin`）と `GBIZINFO_TIMEOUT_SECONDS`（既定: `20`）です。
+## CLIで使う
 
-## CLIとPythonライブラリ
+CLIとPythonを実行するシェルでトークンを設定します。
 
-`GBIZINFO_API_TOKEN` を環境変数に設定し、リポジトリのルートで実行します。
-
-```bash
-uv run gbizinfo-mcp hojin_get_basic --args '{"corporate_number":"1234567890123"}'
+```powershell
+$env:GBIZINFO_API_TOKEN = "your_token"
 ```
 
-CLIでは下記のツールを同じ名前で呼び出せます。引数はJSONオブジェクトで渡し、結果は標準出力にJSONで返します。引数なし、または `serve` でMCPサーバーが起動します。
+macOSやLinuxでは `export GBIZINFO_API_TOKEN="your_token"` を使います。
+
+クローンせずに実行できます。結果は標準出力に出ます。
+
+引数はJSONオブジェクトで渡します。例の法人番号は照会したい13桁の番号に置き換えてください。次の例はPowerShell 7.3以降またはmacOS・Linuxのシェルで実行できます。
+
+```sh
+uvx --python 3.12 --from git+https://github.com/koizumikento/gbizinfo-mcp.git@master gbizinfo-mcp hojin_get_basic --args '{"corporate_number":"1234567890123"}'
+```
+
+## Pythonライブラリとして使う
+
+自分のPythonプロジェクト（`pyproject.toml` があるディレクトリ）で依存関係に追加します。[CLIで使う](#cliで使う)と同様に、実行するシェルで `GBIZINFO_API_TOKEN` を設定してください。
+
+```sh
+uv add "git+https://github.com/koizumikento/gbizinfo-mcp.git@master"
+```
+
+次のコードを `example.py` に保存し、同じディレクトリで `uv run python example.py` を実行します。
+
+`create_toolset()` で作ったクライアントで、MCPと同名の非同期メソッドを呼び出せます。
 
 ```python
 import asyncio
