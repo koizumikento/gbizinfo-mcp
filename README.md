@@ -90,7 +90,7 @@ print(asyncio.run(gbizinfo.hojin_get_basic(corporate_number="1234567890123")))
 - 期間指定更新情報: `hojin_update_info_basic`、`hojin_update_info_certification`、`hojin_update_info_commendation`、`hojin_update_info_finance`、`hojin_update_info_patent`、`hojin_update_info_procurement`、`hojin_update_info_subsidy`、`hojin_update_info_workplace`
 - 法人番号指定取得: `hojin_get_basic`、`hojin_get_certification`、`hojin_get_commendation`、`hojin_get_corporation`、`hojin_get_finance`、`hojin_get_patent`、`hojin_get_procurement`、`hojin_get_subsidy`、`hojin_get_workplace`
 
-事業所情報の期間指定取得は2026年7月31日から公式APIで停止されています。`hojin_update_info_corporation` は既存の呼び出し向けに名前を残し、通信せず案内を返します。法人ごとの事業所情報は `hojin_get_corporation`、一括取得は公式サイトのデータダウンロードを利用してください。[公式のお知らせ](https://help.info.gbiz.go.jp/hc/ja/articles/5543677736734)
+法人ごとの事業所情報は `hojin_get_corporation` で照会できます。一括取得には公式サイトのデータダウンロードを使ってください。`hojin_update_info_corporation` を呼ぶと、期間指定のAPIには接続せず、代わりの取得方法を案内します。[公式のお知らせ](https://help.info.gbiz.go.jp/hc/ja/articles/5543677736734)
 
 ## データ出典・利用条件
 
@@ -99,7 +99,6 @@ print(asyncio.run(gbizinfo.hojin_get_basic(corporate_number="1234567890123")))
 ## 開発
 
 SitesのWorkerで実行する場合は [Sites用adapterと配備手順](docs/sites.md) を参照してください。
-既存のPython library・CLI・stdioはそのまま利用できます。
 
 ```bash
 uv sync --frozen
