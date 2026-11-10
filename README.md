@@ -86,9 +86,18 @@ print(asyncio.run(gbizinfo.hojin_get_basic(corporate_number="1234567890123")))
 
 ## ツール
 
-- 法人検索: `hojin_search`
-- 期間指定更新情報: `hojin_update_info_basic`、`hojin_update_info_certification`、`hojin_update_info_commendation`、`hojin_update_info_finance`、`hojin_update_info_patent`、`hojin_update_info_procurement`、`hojin_update_info_subsidy`、`hojin_update_info_workplace`
-- 法人番号指定取得: `hojin_get_basic`、`hojin_get_certification`、`hojin_get_commendation`、`hojin_get_corporation`、`hojin_get_finance`、`hojin_get_patent`、`hojin_get_procurement`、`hojin_get_subsidy`、`hojin_get_workplace`
+法人を探すには `hojin_search` を使います。更新情報を期間で絞り込むツールと、法人番号で情報を取得するツールは次のとおりです。
+
+| 情報 | 期間で更新情報を取得 | 法人番号で取得 |
+| --- | --- | --- |
+| 基本情報 | `hojin_update_info_basic` | `hojin_get_basic` |
+| 届出・認定 | `hojin_update_info_certification` | `hojin_get_certification` |
+| 表彰 | `hojin_update_info_commendation` | `hojin_get_commendation` |
+| 財務 | `hojin_update_info_finance` | `hojin_get_finance` |
+| 特許 | `hojin_update_info_patent` | `hojin_get_patent` |
+| 調達 | `hojin_update_info_procurement` | `hojin_get_procurement` |
+| 補助金 | `hojin_update_info_subsidy` | `hojin_get_subsidy` |
+| 職場情報 | `hojin_update_info_workplace` | `hojin_get_workplace` |
 
 法人ごとの事業所情報は `hojin_get_corporation` で照会できます。一括取得には公式サイトのデータダウンロードを使ってください。`hojin_update_info_corporation` を呼ぶと、期間指定のAPIには接続せず、代わりの取得方法を案内します。[公式のお知らせ](https://help.info.gbiz.go.jp/hc/ja/articles/5543677736734)
 
