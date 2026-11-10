@@ -5,12 +5,19 @@ from typing import Literal
 
 ToolKind = Literal["search", "update", "get"]
 
+CORPORATION_UPDATE_UNAVAILABLE = (
+    "gBizINFO suspended establishment updates by date on 2026-07-31. "
+    "Use hojin_get_corporation with a corporate number, "
+    "or use the official data download for bulk access."
+)
+
 
 @dataclass(frozen=True)
 class ToolSpec:
     name: str
     path: str
     kind: ToolKind
+    unavailable: str | None = None
 
 
 TOOL_SPECS: tuple[ToolSpec, ...] = (
@@ -18,7 +25,12 @@ TOOL_SPECS: tuple[ToolSpec, ...] = (
     ToolSpec("hojin_update_info_basic", "/v2/hojin/updateInfo", "update"),
     ToolSpec("hojin_update_info_certification", "/v2/hojin/updateInfo/certification", "update"),
     ToolSpec("hojin_update_info_commendation", "/v2/hojin/updateInfo/commendation", "update"),
-    ToolSpec("hojin_update_info_corporation", "/v2/hojin/updateInfo/corporation", "update"),
+    ToolSpec(
+        "hojin_update_info_corporation",
+        "/v2/hojin/updateInfo/corporation",
+        "update",
+        unavailable=CORPORATION_UPDATE_UNAVAILABLE,
+    ),
     ToolSpec("hojin_update_info_finance", "/v2/hojin/updateInfo/finance", "update"),
     ToolSpec("hojin_update_info_patent", "/v2/hojin/updateInfo/patent", "update"),
     ToolSpec("hojin_update_info_procurement", "/v2/hojin/updateInfo/procurement", "update"),

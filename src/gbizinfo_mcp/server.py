@@ -3,11 +3,13 @@ from __future__ import annotations
 from typing import Annotated, Any
 
 from mcp.server import MCPServer
+from mcp.server.mcpserver.exceptions import ToolError
 from mcp.types import ToolAnnotations
 from pydantic import Field
 
 from .client import ApiRequestError, GbizInfoClient
 from .config import Settings, load_settings_from_env
+from .tool_specs import CORPORATION_UPDATE_UNAVAILABLE
 from .validators import (
     ensure_corporate_number,
     ensure_from_to_range,
@@ -260,13 +262,7 @@ class GbizInfoToolset:
         page: int | None = None,
         metadata_flg: bool | None = None,
     ) -> dict[str, Any]:
-        return await self._call_update_info(
-            "/v2/hojin/updateInfo/corporation",
-            from_date=from_date,
-            to_date=to_date,
-            page=page,
-            metadata_flg=metadata_flg,
-        )
+        raise ValueError(CORPORATION_UPDATE_UNAVAILABLE)
 
     async def hojin_update_info_finance(
         self,
@@ -613,7 +609,7 @@ def create_server(settings: Settings | None = None) -> MCPServer:
         )
 
     @mcp.tool(
-        description="List updates to corporation registry info for the specified date range.",
+        description=f"Deprecated. {CORPORATION_UPDATE_UNAVAILABLE}",
         annotations=READ_ONLY_TOOL,
     )
     async def hojin_update_info_corporation(
@@ -622,12 +618,7 @@ def create_server(settings: Settings | None = None) -> MCPServer:
         page: PageParam = None,
         metadata_flg: MetadataFlagParam = None,
     ) -> dict[str, Any]:
-        return await toolset.hojin_update_info_corporation(
-            from_date=from_date,
-            to_date=to_date,
-            page=page,
-            metadata_flg=metadata_flg,
-        )
+        raise ToolError(CORPORATION_UPDATE_UNAVAILABLE)
 
     @mcp.tool(
         description="List updates to financial info for the specified date range.",

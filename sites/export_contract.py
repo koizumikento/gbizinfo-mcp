@@ -22,7 +22,14 @@ async def main() -> None:
     contract = {
         "version": version("gbizinfo-mcp"),
         "tools": [tool.model_dump(by_alias=True, exclude_none=True) for tool in tools],
-        "routes": {spec.name: {"path": spec.path, "kind": spec.kind} for spec in TOOL_SPECS},
+        "routes": {
+            spec.name: (
+                {"unavailable": spec.unavailable}
+                if spec.unavailable
+                else {"path": spec.path, "kind": spec.kind}
+            )
+            for spec in TOOL_SPECS
+        },
         "prefectures": PREFECTURE_CODE_BY_NAME | PREFECTURE_CODE_BY_ALIAS,
         "baseUrl": DEFAULT_BASE_URL,
         "timeoutSeconds": DEFAULT_TIMEOUT_SECONDS,

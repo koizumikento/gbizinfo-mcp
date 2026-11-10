@@ -1,6 +1,6 @@
 # gbizinfo-mcp
 
-Gビズインフォ REST API v2の19エンドポイントを、同名の19 MCP toolsとして提供します。stdio transportで動作し、APIのJSONレスポンスをそのまま返します。
+Gビズインフォ REST API v2の現行18エンドポイントを、MCP・CLI・Pythonから利用できます。MCPはstdioで動作し、APIのJSONレスポンスをそのまま返します。
 
 ## 実行
 
@@ -41,7 +41,7 @@ MCPクライアント設定例:
 uv run gbizinfo-mcp hojin_get_basic --args '{"corporate_number":"1234567890123"}'
 ```
 
-CLIでは下記19ツールを同じ名前で呼び出せます。引数はJSONオブジェクトで渡し、結果は標準出力にJSONで返します。引数なし、または `serve` でMCPサーバーが起動します。
+CLIでは下記のツールを同じ名前で呼び出せます。引数はJSONオブジェクトで渡し、結果は標準出力にJSONで返します。引数なし、または `serve` でMCPサーバーが起動します。
 
 ```python
 import asyncio
@@ -55,8 +55,10 @@ print(asyncio.run(gbizinfo.hojin_get_basic(corporate_number="1234567890123")))
 ## ツール
 
 - 法人検索: `hojin_search`
-- 期間指定更新情報: `hojin_update_info_basic`、`hojin_update_info_certification`、`hojin_update_info_commendation`、`hojin_update_info_corporation`、`hojin_update_info_finance`、`hojin_update_info_patent`、`hojin_update_info_procurement`、`hojin_update_info_subsidy`、`hojin_update_info_workplace`
+- 期間指定更新情報: `hojin_update_info_basic`、`hojin_update_info_certification`、`hojin_update_info_commendation`、`hojin_update_info_finance`、`hojin_update_info_patent`、`hojin_update_info_procurement`、`hojin_update_info_subsidy`、`hojin_update_info_workplace`
 - 法人番号指定取得: `hojin_get_basic`、`hojin_get_certification`、`hojin_get_commendation`、`hojin_get_corporation`、`hojin_get_finance`、`hojin_get_patent`、`hojin_get_procurement`、`hojin_get_subsidy`、`hojin_get_workplace`
+
+事業所情報の期間指定取得は2026年7月31日から公式APIで停止されています。`hojin_update_info_corporation` は既存の呼び出し向けに名前を残し、通信せず案内を返します。法人ごとの事業所情報は `hojin_get_corporation`、一括取得は公式サイトのデータダウンロードを利用してください。[公式のお知らせ](https://help.info.gbiz.go.jp/hc/ja/articles/5543677736734)
 
 ## データ出典・利用条件
 

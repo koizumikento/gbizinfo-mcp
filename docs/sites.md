@@ -8,7 +8,7 @@ SitesのWorkerからgBizINFO REST API v2へ直接HTTPSで接続します。別Py
 - tool成功時はupstreamのJSON objectをそのまま `structuredContent` とJSON textで返します。page、limit、metadata、出典、空結果を変形せず、次ページを自動取得しません。
 - OpenAPIのint64を丸めないため、textはupstream JSONを保持し、SDKのJSON/SSE envelopeを確定後、structuredContentの数値を `JSON.parse` source contextと `JSON.rawJSON` で復元します。Nodeとisolated workerdで2^53を超える値をwire上で確認します。
 - required引数・JSON schemaのprimitive type・法人番号・日付・期間・page・limit・都道府県を検証します。Workerではschema違反の型変換と未知の引数を拒否します。Python SDKの暗黙変換を利用するcallerはadvertised schemaに合わせてください。
-- GET先はbuild時に固定した公式APIと19 routesのみです。任意URL/path forwardingやredirect追従はありません。Python側の `GBIZINFO_BASE_URL` / timeout設定は従来通り、Workerは公式URLと既存の既定20秒を使います。
+- GET先はbuild時に固定した公式APIの18 routesです。停止された事業所情報の期間指定ツールは、既存の名前で案内を返します。任意URL/path forwardingやredirect追従はありません。Python側の `GBIZINFO_BASE_URL` / timeout設定は従来通り、Workerは公式URLと既存の既定20秒を使います。
 - 429/500/502/503/504は最大2 retries（250ms、500ms）です。HTTP errorは `isError: true` とstatus、invalid JSON/rootもtool errorとして返します。Workerのerror textはsecret保護のためupstream body、reason phrase、例外の詳細を省略します。ネットワーク/timeoutは安全な再試行案内を返します。
 - Sites DispatchがOAuthと接続認証を担当します。Workerは `/mcp` で `oai-authenticated-user-id` を必須にし、Sitesの既存audience/access policyを保ちます。Siteにアクセス可能なsigned-in userは、このSiteのサービス用API tokenで公開法人情報を検索できます。discoveryにはprivate dataやsecretを含めません。
 - service accessの `OAI-Sites-Authorization` だけではユーザーidentityを持たず、本adapterでは401です。ユーザーを偽装する代替OAuth、backend token、emailによる権限判定は追加していません。
@@ -41,7 +41,7 @@ sites/dist/
 
 `.openai/hosting.json` は `capabilities: ["mcp"]`、未使用 `d1` / `r2: null` を宣言し、`static` を持ちません。repoにSite IDは含めません。manifestを変更したら再buildしてください。
 
-testsはbuildしたESMそのものをimportします。synthetic dataのみで19 routes/queryをPythonの `GbizInfoToolset` と照合し、全discovery schema、paging/provenance、認証拒否、service-only拒否、Origin、schema/domain validation、retry exhaustion、secret非反映、不正応答を検証します。公式SDK clientで旧initialize（2025-11-25）と新版discover（2026-07-28）の両方をin-process検証します。Miniflare/workerdでもloopbackの使い捨てruntimeを起動し、outboundServiceをsynthetic応答に固定して実artifactとint64を確認します。`finally` でruntime停止と専用temporary directoryの削除を行います。本物のgBizINFO APIは利用しません。Miniflare 5は現時点の公式releaseがalphaのためexact versionで固定し、dev dependencyだけに使用します。
+testsはbuildしたESMそのものをimportします。synthetic dataのみで18 routes/queryと停止ツールの案内をPythonの `GbizInfoToolset` と照合し、全discovery schema、paging/provenance、認証拒否、service-only拒否、Origin、schema/domain validation、retry exhaustion、secret非反映、不正応答を検証します。公式SDK clientで旧initialize（2025-11-25）と新版discover（2026-07-28）の両方をin-process検証します。Miniflare/workerdでもloopbackの使い捨てruntimeを起動し、outboundServiceをsynthetic応答に固定して実artifactとint64を確認します。`finally` でruntime停止と専用temporary directoryの削除を行います。本物のgBizINFO APIは利用しません。Miniflare 5は現時点の公式releaseがalphaのためexact versionで固定し、dev dependencyだけに使用します。
 
 ## Sitesへの配備（PRレビュー後）
 

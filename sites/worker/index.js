@@ -57,12 +57,13 @@ function validateArguments(tool, args) {
 async function callTool(name, args, env, signal, capturePayload) {
   const tool = tools.get(name);
   if (!tool) throw new ProtocolError(ProtocolErrorCode.InvalidParams, `Unknown tool: ${name}`);
+  const route = contract.routes[name];
+  if (route.unavailable) return failure(route.unavailable);
   let query;
   try { query = validateArguments(tool, args); }
   catch (error) { return failure(error.message); }
   try {
     if (!env.GBIZINFO_API_TOKEN) return failure("GBIZINFO_API_TOKEN is required; configure the Site runtime secret");
-    const route = contract.routes[name];
     const url = new URL(contract.baseUrl + route.path.replace("{corporate_number}", encodeURIComponent(query.corporate_number)));
     for (const [key, value] of Object.entries(query)) {
       if (value == null || (route.kind === "get" && key === "corporate_number")) continue;

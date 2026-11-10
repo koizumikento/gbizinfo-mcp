@@ -32,6 +32,15 @@ async def main() -> None:
             args.update(from_date="20240229", to_date="20240301", page=2)
         else:
             args.update(name="架空法人", prefecture="東京都, １,大阪", page=2, limit=0)
+        if spec.unavailable:
+            try:
+                await getattr(toolset, spec.name)(**args)
+            except ValueError as exc:
+                cases.append(
+                    {"name": spec.name, "args": args, "invalid": True, "message": str(exc)}
+                )
+                continue
+            raise AssertionError(f"Unavailable operation must fail: {spec.name}")
         result = await getattr(toolset, spec.name)(**args)
         cases.append({"name": spec.name, "args": args, "expected": result})
 

@@ -68,7 +68,7 @@ test("authentication, origin, routing and malformed protocol fail closed", async
   assert.equal(unknown.error.code, -32602);
 });
 
-test("all 19 tools preserve Python path/query and upstream JSON including paging/provenance", async () => {
+test("all active tools preserve Python path/query and upstream JSON including paging/provenance", async () => {
   const calls = [];
   const payload = { "hojin-infos": [{ name: "架空法人", source: "synthetic fixture" }], page: 2, total: 5001, metadata: { provenance: "fixture-v1" } };
   mock.method(globalThis, "fetch", async (url, init) => {
@@ -95,7 +95,9 @@ test("Python domain-invalid and schema-invalid arguments never reach upstream", 
   mock.method(globalThis, "fetch", () => { throw new Error("must not call upstream"); });
   try {
     for (const fixture of fixtures.filter((f) => f.invalid)) {
-      assert.equal((await rpc("tools/call", { name: fixture.name, arguments: fixture.args })).result.isError, true);
+      const result = (await rpc("tools/call", { name: fixture.name, arguments: fixture.args })).result;
+      assert.equal(result.isError, true);
+      if (fixture.message) assert.equal(result.content[0].text, fixture.message);
     }
     for (const args of [{ corporate_number: null }, {}, { corporate_number: 1234567890123 }, { corporate_number: "1234567890123", url: "https://evil.test" }]) {
       assert.equal((await rpc("tools/call", { name: "hojin_get_basic", arguments: args })).result.isError, true);

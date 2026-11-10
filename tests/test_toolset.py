@@ -30,6 +30,15 @@ def test_cli_calls_gbizinfo_and_outputs_json(monkeypatch, capsys) -> None:
         assert route.call_count == 1
 
 
+def test_cli_reports_suspended_establishment_updates(monkeypatch, capsys) -> None:
+    monkeypatch.setenv("GBIZINFO_API_TOKEN", "test-token")
+    with respx.mock as upstream:
+        args = '{"from_date":"20261001","to_date":"20261002"}'
+        assert main(["hojin_update_info_corporation", "--args", args]) == 1
+        assert "Use hojin_get_corporation" in capsys.readouterr().err
+        assert not upstream.calls
+
+
 class FakeClient:
     def __init__(self) -> None:
         self.calls: list[dict[str, Any]] = []
@@ -47,11 +56,11 @@ class FakeClient:
 
 
 @pytest.mark.asyncio
-async def test_all_tool_specs_are_callable_and_use_expected_paths() -> None:
+async def test_all_available_tool_specs_are_callable_and_use_expected_paths() -> None:
     client = FakeClient()
     toolset = GbizInfoToolset(client=client)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
 
-    for spec in TOOL_SPECS:
+    for spec in (spec for spec in TOOL_SPECS if not spec.unavailable):
         method = getattr(toolset, spec.name)
         if spec.kind == "search":
             result = await method(name="Test Corporation", page=1, limit=10, metadata_flg=True)
@@ -131,6 +140,16 @@ def test_create_server_requires_token_env(monkeypatch: pytest.MonkeyPatch) -> No
         create_server(settings=None)
 
 
+@pytest.mark.asyncio
+async def test_suspended_establishment_updates_redirect_callers_without_http() -> None:
+    client = FakeClient()
+    toolset = GbizInfoToolset(client=client)  # type: ignore[arg-type]  # ty: ignore[invalid-argument-type]
+
+    with pytest.raises(ValueError, match="Use hojin_get_corporation"):
+        await toolset.hojin_update_info_corporation("20261001", "20261002")
+    assert client.calls == []
+
+
 def test_create_server_accepts_explicit_settings() -> None:
     settings = Settings(api_token="token", base_url="https://example.com/hojin", timeout_seconds=20)
     server = create_server(settings=settings)
@@ -143,6 +162,8 @@ async def test_create_server_registers_19_tools() -> None:
     server = create_server(settings=settings)
     tools = await server.list_tools()
     assert len(tools) == 19
+    suspended = next(tool for tool in tools if tool.name == "hojin_update_info_corporation")
+    assert suspended.description and suspended.description.startswith("Deprecated.")
 
 
 @pytest.mark.asyncio
@@ -198,4 +219,10 @@ async def test_mcp_initialization_validation_and_response() -> None:
         assert not result.is_error
         assert isinstance(result.content[0], TextContent)
         assert json.loads(result.content[0].text) == {"hojin-infos": [{"name": "Test Corporation"}]}
+        suspended = await client.call_tool(
+            "hojin_update_info_corporation", {"from_date": "20261001", "to_date": "20261002"}
+        )
+        assert suspended.is_error
+        assert isinstance(suspended.content[0], TextContent)
+        assert "Use hojin_get_corporation" in suspended.content[0].text
     assert route.call_count == 1
