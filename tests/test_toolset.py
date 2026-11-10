@@ -10,10 +10,24 @@ import respx
 from mcp import Client, StdioServerParameters
 from mcp.types import TextContent
 
+from gbizinfo_mcp.__main__ import main
 from gbizinfo_mcp.client import ApiRequestError
 from gbizinfo_mcp.config import Settings
 from gbizinfo_mcp.server import GbizInfoToolset, create_server
 from gbizinfo_mcp.tool_specs import TOOL_SPECS
+
+
+def test_cli_calls_gbizinfo_and_outputs_json(monkeypatch, capsys) -> None:
+    monkeypatch.setenv("GBIZINFO_API_TOKEN", "test-token")
+    monkeypatch.setenv("GBIZINFO_BASE_URL", "https://example.test")
+    with respx.mock:
+        route = respx.get("https://example.test/v2/hojin/1234567890123").respond(
+            json={"name": "テスト法人"}
+        )
+        assert main(["hojin_get_basic", "--args", '{"corporate_number":"1234567890123"}']) == 0
+        assert json.loads(capsys.readouterr().out) == {"name": "テスト法人"}
+        assert main(["hojin_get_basic", "--args", '{"corporate_number":1234567890123}']) == 2
+        assert route.call_count == 1
 
 
 class FakeClient:

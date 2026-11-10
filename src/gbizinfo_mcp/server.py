@@ -443,10 +443,14 @@ class GbizInfoToolset:
         )
 
 
+def create_toolset(settings: Settings | None = None) -> GbizInfoToolset:
+    """Create a client for direct calls to the gBizINFO operations."""
+    return GbizInfoToolset(client=GbizInfoClient(settings or load_settings_from_env()))
+
+
 def create_server(settings: Settings | None = None) -> MCPServer:
-    resolved_settings = settings or load_settings_from_env()
+    toolset = create_toolset(settings)
     mcp = MCPServer("gbizinfo-mcp")
-    toolset = GbizInfoToolset(client=GbizInfoClient(resolved_settings))
 
     @mcp.tool(
         description=(

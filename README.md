@@ -33,6 +33,25 @@ MCPクライアント設定例:
 
 任意設定は `GBIZINFO_BASE_URL`（既定: `https://api.info.gbiz.go.jp/hojin`）と `GBIZINFO_TIMEOUT_SECONDS`（既定: `20`）です。
 
+## CLIとPythonライブラリ
+
+`GBIZINFO_API_TOKEN` を環境変数に設定し、リポジトリのルートで実行します。
+
+```bash
+uv run gbizinfo-mcp hojin_get_basic --args '{"corporate_number":"1234567890123"}'
+```
+
+CLIでは下記19ツールを同じ名前で呼び出せます。引数はJSONオブジェクトで渡し、結果は標準出力にJSONで返します。引数なし、または `serve` でMCPサーバーが起動します。
+
+```python
+import asyncio
+
+from gbizinfo_mcp import create_toolset
+
+gbizinfo = create_toolset()
+print(asyncio.run(gbizinfo.hojin_get_basic(corporate_number="1234567890123")))
+```
+
 ## ツール
 
 - 法人検索: `hojin_search`
